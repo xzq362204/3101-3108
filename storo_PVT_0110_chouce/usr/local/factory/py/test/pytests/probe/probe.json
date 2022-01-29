@@ -1,0 +1,66 @@
+{
+  "audio_codec": {
+    "audio_codec": {
+      "eval": "generic_audio_codec"
+    }
+  },
+  "cpu": {
+    "cpu": {
+      "eval": "generic_cpu"
+    }
+  },
+  "embedded_controller": {
+    "embedded_controller": {
+      "eval": "shell:mosys ec info -s name",
+      "expect": "NPCX796F"
+    }
+  },
+  "flash_chip": {
+    "flash_chip": {
+      "eval": "flash_chip:main"
+    }
+  },
+  "storage": {
+    "storage": {
+      "eval": "generic_storage"
+    }
+  },
+  "wireless": {
+    "wlan0": {
+      "eval": "shell:iwconfig wlan0"
+    }
+  },
+  "bluetooth": {
+    "hci0": {
+      "eval": "shell:hciconfig hci0"
+    }
+  },
+  "camera": {
+    "camera": {
+      "eval": {
+        "generic_video": {}
+      },
+      "expect": {
+        "type": "webcam"
+      }
+    }
+  },
+  "touchpad": {
+    "touchpad": {
+      "eval": {
+        "input_device": {
+          "device_type": "touchpad"
+        }
+      }
+    }
+  },
+  "touchscreen": {
+    "touchscreen": {
+      "eval": {
+        "input_device": {
+          "device_type": "touchscreen"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,735 @@
+{
+  "inherit": [
+    "generic_common.test_list"
+  ],
+  "constants": {
+    "light_sensor_input": "in_illuminance_raw",
+    "audiojack_detection_is_ready": true,
+    "__comment_audiojack_detection_is_ready": "Whether to detect audio jack",
+    "cras_enabled_for_audio_test": true,
+    "__comment_cras_enabled_for_audio_test": "Whether cras should be enabled during audio test or not.",
+    "sd": {
+      "sysfs_path": "/sys/devices/pci0000:00/0000:00:14.5/mmc_host"
+    },
+    "__comment_sd_sysfs_path": "Use 'udevadm monitor' to find out udev sysfs path.",
+    "stress_duration_secs": 10,
+    "typea_usb": {
+      "left": {
+        "usb2_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb1/1-3",
+        "usb3_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb2/2-3"
+      },
+      "right": {
+        "usb2_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb1/1-5",
+        "usb3_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb2/2-5"
+      }
+    },
+    "typec_usb": {
+      "left": {
+        "usb2_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb1/1-1",
+        "usb3_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb2/2-1",
+        "uvc_video_dev_port": "2-3",
+        "usbpd_id": 0,
+        "drm_sysfs_path": "/sys/class/drm/card0",
+        "display_info": [
+          "DisplayPort",
+          "DP-1",
+          null,
+          0
+        ]
+      },
+      "right": {
+        "usb2_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb1/1-2",
+        "usb3_sysfs_path": "/sys/devices/pci0000:00/0000:00:14.0/usb2/2-2",
+        "uvc_video_dev_port": "2-3",
+        "usbpd_id": 1,
+        "drm_sysfs_path": "/sys/class/drm/card0",
+        "display_info": [
+          "DisplayPort",
+          "DP-2",
+          null,
+          1
+        ]
+      }
+    },
+    "led": {
+      "colors": [
+        ["BATTERY", "WHITE"],
+        ["BATTERY", "AMBER"],
+        ["BATTERY", "OFF"]
+      ]
+    },
+    "dmic": {
+      "input_channels": [0, 1]
+    }
+  },
+  "definitions": {
+    "WriteDRAMPartNum": {
+      "pytest_name": "exec_shell",
+      "label": "Write DRAM part number to EEPROM",
+      "args": {
+        "commands": [
+          "[ -n \"$(factory device-data -g component.dram.part_num)\" ]",
+          "ectool cbi set 3 $(factory device-data -g component.dram.part_num) 0"
+        ]
+      }
+    },
+    "AudioJack": {
+      "disable_services": ["cras"],
+      "args": {
+        "__replace__": true,
+        "check_dongle": true,
+        "initial_actions": [
+          [
+            "sof-sof_rt5682",
+            "initial"
+          ]
+        ],
+        "input_dev": [
+          "sof-sof_rt5682",
+          "0"
+        ],
+        "output_dev": [
+          "sof-sof_rt5682",
+          "0"
+        ],
+        "output_volume": 10,
+        "require_dongle": true,
+        "tests_to_conduct": [
+          {
+            "freq_threshold": 300,
+            "rms_threshold": [
+              0.08,
+              null
+            ],
+            "type": "sinewav"
+          }
+        ]
+      }
+    },
+    "Bluetooth": {
+      "__comment": "Marvell 8897: Antenna is connected: -40~-60, Antenna is disconnected: ~-95",
+      "args": {
+        "average_rssi_threshold": -85.0
+      }
+    },
+    "Button": {
+      "args": {
+      }
+    },
+    "Camera": {
+      "args": {
+        "e2e_mode": false,
+        "resize_ratio": 0.4,
+        "timeout_secs": 30,
+        "camera_args": {
+          "resolution": [
+            1280,
+            720
+          ]
+        }
+      }
+    },
+    "FrontCamera": {
+      "inherit": "CameraManual",
+      "label": "Front Camera",
+      "args": {
+        "mode": "manual",
+        "num_frames_to_pass": 1,
+        "camera_facing": "front"
+      }
+    },
+    "RearCamera": {
+      "inherit": "CameraManual",
+      "label": "Rear Camera",
+      "args": {
+        "mode": "manual",
+        "num_frames_to_pass": 1,
+        "camera_facing": "rear"
+      }
+    },
+    "CheckPoint": {
+      "args": {
+        "pass_without_prompt": true
+      }
+    },
+    "HWButton": {
+      "subtests": [
+        {
+          "inherit": "Button",
+          "label": "Power Button",
+          "args": {
+            "button_key_name": "ectool:-POWER_BUTTON_L",
+            "button_name": "i18n! Power Button"
+          }
+        },
+        {
+          "inherit": "Button",
+          "label": "Volume Up",
+          "args": {
+            "button_key_name": "ectool:-VOLUME_UP_L",
+            "button_name": "i18n! Volume Up"
+          }
+        },
+        {
+          "inherit": "Button",
+          "label": "Volume Down",
+          "args": {
+            "button_key_name": "ectool:-VOLUME_DOWN_L",
+            "button_name": "i18n! Volume Down"
+          }
+        }
+      ]
+    },
+    "LED": {
+      "args": {
+        "colors": "eval! constants.led.colors",
+        "challenge": false
+      }
+    },
+    "ModelSKU": {
+      "args": {
+        "config_name": "model_sku"
+       }
+    },
+    "Probe": {
+      "args": {
+        "config_file": "probe_dedede_for_match_sku_components.json",
+        "overridden_rules": "eval! device.component.match_sku_components"
+      }
+    },
+    "RemovableStorage": {
+      "args": {
+        "timeout_secs": 200
+      }
+    },
+    "SpeakerDMic": {
+      "pytest_name": "audio_loop",
+      "disable_services": ["cras"],
+      "args": {
+        "autostart": true,
+        "check_dongle": true,
+        "require_dongle": false,
+        "initial_actions": [
+          [
+            "sof-sof_rt5682",
+            "initial"
+          ]
+        ],
+        "input_dev": [
+          "sof-sof_rt5682",
+          "1"
+        ],
+        "mic_source": "Dmic",
+        "output_dev": [
+          "sof-sof_rt5682",
+          "5"
+        ],
+        "output_volume": 20,
+        "tests_to_conduct": [
+          {
+            "input_channels": "eval! constants.dmic.input_channels",
+            "threshold": 80,
+            "type": "audiofun"
+          }
+        ]
+      }
+    },
+    "LightSensorSMT": {
+      "pytest_name": "light_sensor",
+      "label": "Light Sensor SMT",
+      "args": {
+        "device_input": "eval! constants.light_sensor_input",
+        "subtest_cfg": {
+          "Light sensor dark": {
+            "below": 50
+          },
+          "Light sensor light": {
+            "above": 51
+          }
+        },
+        "subtest_list": [
+          "Light sensor dark",
+          "Light sensor light"
+        ],
+        "subtest_instruction": {
+          "Light sensor dark": "i18n! Cover light sensor with finger",
+          "Light sensor light": "i18n! Shine light sensor with flashlight"
+        },
+        "timeout_per_subtest": 20
+      }
+    },
+    "LightSensor": {
+      "pytest_name": "light_sensor",
+      "label": "Light Sensor",
+      "args": {
+        "device_input": "eval! constants.light_sensor_input",
+        "subtest_cfg": {
+          "Light sensor dark": {
+            "below": 30
+          },
+          "Light sensor exact": {
+            "between": [
+              60,
+              300
+            ]
+          },
+          "Light sensor light": {
+            "above": 500
+          }
+        },
+        "subtest_instruction": {
+          "Light sensor dark": "i18n! Cover light sensor with finger",
+          "Light sensor exact": "i18n! Remove finger from light sensor",
+          "Light sensor light": "i18n! Shine light sensor with flashlight"
+        },
+        "subtest_list": [
+          "Light sensor dark",
+          "Light sensor exact",
+          "Light sensor light"
+        ],
+        "timeout_per_subtest": 20
+      }
+    },
+    "LidAccelerometersCalibration": {
+      "label": "Lid Accelerometers Calibration",
+      "args": {
+        "orientation": {
+          "in_accel_x": 0,
+          "in_accel_y": 0,
+          "in_accel_z": 1
+        }
+      }
+    },
+    "BaseAccelerometersCalibration": {
+      "label": "Base Accelerometers Calibration",
+      "args": {
+        "orientation": {
+          "in_accel_x": 0,
+          "in_accel_y": 0,
+          "in_accel_z": 1
+        }
+      }
+    },
+    "LidAccelerometersAutoCalibration": {
+      "label": "Lid Accelerometers Auto Calibration",
+      "pytest_name": "spatial_sensor_calibration",
+      "args": {
+        "sensor_name": "LidAccel",
+        "device_location": "lid",
+        "device_name": "cros-ec-accel",
+        "raw_entry_template": "in_accel_%s_raw",
+        "calibbias_entry_template": "in_accel_%s_calibbias",
+        "vpd_entry_template": "in_accel_%s_lid_calibbias"
+      }
+    },
+    "BaseAccelerometersAutoCalibration": {
+      "label": "Base Accelerometers Auto Calibration",
+      "pytest_name": "spatial_sensor_calibration",
+      "args": {
+        "sensor_name": "BaseAccel",
+        "device_location": "base",
+        "device_name": "cros-ec-accel",
+        "raw_entry_template": "in_accel_%s_raw",
+        "calibbias_entry_template": "in_accel_%s_calibbias",
+        "vpd_entry_template": "in_accel_%s_base_calibbias"
+      }
+    },
+    "AccelerometersLidAngle": {
+      "args": {
+        "angle": 180,
+        "tolerance": 5
+      }
+    },
+    "LidSwitch": {
+      "args": {
+        "device_filter": 1
+      }
+    },
+    "Gyroscope": {
+      "pytest_name": "gyroscope",
+      "args": {
+        "rotation_threshold": 1.0,
+        "stop_threshold": 0.1,
+        "autostart": true
+      }
+    },
+    "BaseGyroscope": {
+      "label": "Gyroscope",
+      "subtests": [
+        {
+          "pytest_name": "exec_shell",
+          "label": "Enable Gyroscope",
+          "args": {
+            "commands": [
+              "ectool motionsense odr 2 25000"
+            ]
+          }
+        },
+        {
+          "pytest_name": "spatial_sensor_calibration",
+          "label": "Gyroscope Calibration",
+          "args": {
+            "sensor_name": "Gyroscope",
+            "device_name": "cros-ec-gyro",
+            "device_location": "base",
+            "raw_entry_template": "in_anglvel_%s_raw",
+            "calibbias_entry_template": "in_anglvel_%s_calibbias",
+            "vpd_entry_template": "in_anglvel_%s_base_calibbias"
+          }
+        },
+        "Gyroscope"
+      ]
+    },
+    "Stylus": {
+      "pytest_name": "stylus",
+      "label": "Stylus",
+      "run_if": "device.component.has_stylus",
+      "args": {
+        "device_filter": "GDIX0000:00 27C6:0118",
+        "endpoints_ratio": [
+          [0, 0],
+          [0, 1]
+        ]
+      }
+    },
+    "StylusPen": {
+      "pytest_name": "detect_stylus",
+      "label": "Stylus Pen",
+      "run_if": "device.component.has_stylus",
+      "args": {
+        "timeout_secs": 30,
+        "device_filter": "GDIX0000:00 27C6:0118 Pen"
+      }
+    },
+    "TabletRotation": {
+      "args": {
+        "timeout_secs": 3600,
+        "prompt_flip_tablet": false,
+        "prompt_flip_notebook": false
+      }
+    },
+    "Touchscreen": {
+      "pytest_name": "touchscreen",
+      "run_if": "device.component.has_touchscreen",
+      "args": {
+        "x_segments": 8,
+        "y_segments": 8,
+        "device_filter": 4
+      }
+    },
+    "SMTStressAppTest": {
+      "inherit": "StressAppTest",
+      "args": {
+        "seconds": "eval! constants.stress_duration_secs"
+      }
+    },
+    "SMTStressCountdown": {
+      "pytest_name": "countdown",
+      "args": {
+        "duration_secs": "eval! constants.stress_duration_secs"
+      }
+    },
+    "USB2Performance": {
+      "inherit": "USBPerformance",
+      "label": "USB2 Performance",
+      "args": {
+        "sysfs_path": "eval! locals.usb.usb2_sysfs_path"
+      }
+    },
+    "USB3Performance": {
+      "inherit": "USBPerformance",
+      "label": "USB3 Performance",
+      "args": {
+        "sysfs_path": "eval! locals.usb.usb3_sysfs_path"
+      }
+    },
+    "USBTypeAManualBase": {
+      "inherit": "TestGroup",
+      "subtests": [
+        "USB3Performance",
+        "USB2Performance"
+      ]
+    },
+    "USBTypeAManualRight": {
+      "inherit": "USBTypeAManualBase",
+      "run_if": "not device.component.has_no_right_usb_typea",
+      "label": "Manual Test Right USB TypeA",
+      "locals": {
+        "usb": "eval! constants.typea_usb.right",
+        "usb_label": "i18n! Right USB TypeA"
+      }
+    },
+    "USBTypeAManualLeft": {
+      "inherit": "USBTypeAManualBase",
+      "label": "Manual Test Left USB TypeA",
+      "locals": {
+        "usb": "eval! constants.typea_usb.left",
+        "usb_label": "i18n! Left USB TypeA"
+      }
+    },
+    "USBTypeAManualTest": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "USBTypeAManualLeft",
+        "USBTypeAManualRight"
+      ]
+    },
+    "USBTypeATest": "USBTypeAManualTest",
+    "USBTypeCTest": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "USBTypeCManualRight",
+        "USBTypeCManualLeft"
+     ]
+    },
+    "USBTypeCManualBase": {
+      "inherit": "TestGroup",
+      "subtests": [
+        {
+          "inherit": "USBPerformance",
+          "label": "USB3 CC1 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb3_sysfs_path",
+            "usbpd_port_polarity": [
+              "eval! locals.usb.usbpd_id",
+              1
+            ]
+          }
+        },
+        {
+          "inherit": "USBPerformance",
+          "label": "USB3 CC2 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb3_sysfs_path",
+            "usbpd_port_polarity": [
+              "eval! locals.usb.usbpd_id",
+              2
+            ]
+          }
+        },
+        {
+          "inherit": "USBPerformance",
+          "label": "USB2 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb2_sysfs_path"
+          }
+        },
+        "USBTypeCManualChargeItems",
+        {
+          "inherit": "ExternalDisplay",
+          "label": "USB3 External Display Test",
+          "args": {
+            "drm_sysfs_path": "eval! locals.usb.drm_sysfs_path",
+            "display_info": [
+              "eval! locals.usb.display_info"
+            ]
+          }
+        },
+        "Barrier"
+      ]
+    },
+    "USBTypeCManualRight": {
+      "inherit": "TestGroup",
+      "label": "Manual Test Right USB TypeC",
+      "locals": {
+        "usb": "eval! constants.typec_usb.right",
+        "usb_label": "i18n! Right USB TypeC"
+      },
+      "subtests": [
+        "USBTypeCManualBase"
+      ]
+    },
+    "USBTypeCManualLeft": {
+      "inherit": "TestGroup",
+      "label": "Manual Test Left USB TypeC",
+      "locals": {
+        "usb": "eval! constants.typec_usb.left",
+        "usb_label": "i18n! Left USB TypeC"
+      },
+      "subtests": [
+        "USBTypeCManualBase"
+      ]
+    },
+    "USBTypeCManualChargeItems": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        {
+          "inherit": "USBTypeCManualCharge",
+          "label": "15V Charging",
+          "locals": {
+            "voltage": 15
+          }
+        },
+        {
+          "inherit": "USBTypeCManualCharge",
+          "label": "5V Charging",
+          "locals": {
+            "voltage": 5
+          }
+        }
+      ]
+    },
+    "WirelessRadiotap": {
+      "__comment": "AP setting for Wireless test. 2.4G uses channels 1(2412), 4(2427), 8(2447). 5G uses channels 149(5745), 153(5765), 157(5785).",
+      "args": {
+        "device_name": "wlan0",
+        "services": [
+          [
+            "antenna_test_5G_1",
+            5745,
+            null
+          ],
+          [
+            "antenna_test_1",
+            2412,
+            null
+          ]
+        ],
+        "strength": {
+          "main": -60,
+          "aux": -60,
+          "all": -60
+        },
+        "scan_count": 10
+      }
+    },
+    "KeyboardBacklight": {
+      "pytest_name": "keyboard_backlight"
+    },
+    "Fan": {
+      "pytest_name": "fan_speed",
+      "label": "Fan Speed",
+      "disable_services": ["dptf"],
+      "args": {
+        "probe_interval_secs": 0.2,
+        "target_rpm": [3000, 4500, 6000],
+        "error_margin": 300
+      }
+    },
+    "SuspendResume": {
+      "args": {
+        "suspend_type": "freeze"
+      }
+    },
+    "ScreenRotation": {
+      "label": "Screen Rotation",
+      "subtests": [
+        {
+          "pytest_name": "tablet_mode",
+          "args": {
+            "prompt_flip_tablet": true
+          }
+        },
+        {
+          "pytest_name": "tablet_rotation",
+          "label": "Tablet Rotation Base-Accel",
+          "args": {
+            "accelerometer_location": "base",
+            "check_accelerometer": true,
+            "degrees_to_orientations": [
+              [
+                0,
+                {
+                  "in_accel_x": 0,
+                  "in_accel_y": -1,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                90,
+                {
+                  "in_accel_x": 1,
+                  "in_accel_y": 0,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                180,
+                {
+                  "in_accel_x": 0,
+                  "in_accel_y": 1,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                270,
+                {
+                  "in_accel_x": -1,
+                  "in_accel_y": 0,
+                  "in_accel_z": 0
+                }
+              ]
+            ],
+            "spec_offset": [1.5, 1.5]
+          }
+        },
+        {
+          "pytest_name": "tablet_rotation",
+          "label": "Tablet Rotation Lid-Accel",
+          "args": {
+            "accelerometer_location": "lid",
+            "check_accelerometer": true,
+            "degrees_to_orientations": [
+              [
+                0,
+                {
+                  "in_accel_x": 0,
+                  "in_accel_y": 1,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                90,
+                {
+                  "in_accel_x": 1,
+                  "in_accel_y": 0,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                180,
+                {
+                  "in_accel_x": 0,
+                  "in_accel_y": -1,
+                  "in_accel_z": 0
+                }
+              ],
+              [
+                270,
+                {
+                  "in_accel_x": -1,
+                  "in_accel_y": 0,
+                  "in_accel_z": 0
+                }
+              ]
+            ],
+            "spec_offset": [1.5, 1.5]
+          }
+        },
+        {
+          "pytest_name": "tablet_mode",
+          "label": "Notebook Mode",
+          "args": {
+            "prompt_flip_notebook": true
+          }
+        }
+      ]
+    },
+    "CR50FirmwareUpdate": {
+      "pytest_name": "update_cr50_firmware"
+    },
+    "UpdateFirmware": {
+      "label": "Update Firmware",
+      "subtests": [
+        {
+          "pytest_name": "update_firmware",
+          "args": {
+            "from_release": true
+          }
+        },
+        "Barrier",
+        "RebootStep"
+      ]
+    }
+  }
+}

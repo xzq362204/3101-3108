@@ -1,0 +1,116 @@
+{
+  "inherit": [
+    "probe"
+  ],
+  "base_accel": {
+    "generic": {
+      "eval": [
+        {
+          "shell": {
+            "command": "cat /sys/bus/platform/devices/cros-ec-accel.*/iio:device*/location | grep base",
+            "key": "name"
+          }
+        }
+      ],
+      "expect": {
+        "name": "base"
+      }
+    }
+  },
+   "cellular": {
+    "cellular": {
+      "eval": "shell:lsusb -v -d 2cb7:0007"
+    }
+  },
+    "camera": {
+    "Quanta": {
+      "eval": "usb",
+      "expect": {
+        "idVendor": "0408"
+      }
+    }
+},
+    "embedded_controller": {
+    "embedded_controller": {
+      "eval": "shell:mosys ec info -s name",
+      "expect": "NPCX797F"
+    }
+  },
+  "lid_accel": {
+    "generic": {
+      "eval": [
+        {
+          "shell": {
+            "command": "cat /sys/bus/platform/devices/cros-ec-accel.*/iio:device*/location | grep lid",
+            "key": "name"
+          }
+        }
+      ],
+      "expect": {
+        "name": "lid"
+      }
+    }
+  },
+  "gyro": {
+    "generic": {
+      "eval": [
+        {
+          "shell": {
+            "command": "cat /sys/bus/platform/devices/cros-ec-gyro.*/iio:device*/name",
+            "key": "name"
+          }
+        }
+      ],
+      "expect": {
+        "name": "cros-ec-gyro"
+      }
+    }
+  },
+   "camera": {
+    "camera_front_HD": {
+      "eval": "file:/sys/class/video4linux/video0/name",
+      "expect": {
+        "file_raw": "!re HD"
+      }
+    },
+    "camera_front_8MP": {
+      "eval": "file:/sys/class/video4linux/video0/name",
+      "expect": {
+        "file_raw": "!re 8MP"
+      }
+    },
+    "camera_front_5M": {
+      "eval": "file:/sys/class/video4linux/video0/name",
+      "expect": {
+        "file_raw": "!re 5M"
+      }
+    },
+    "camera_rear_HD": {
+      "eval": "file:/sys/class/video4linux/video1/name",
+      "expect": {
+        "file_raw": "!re HD"
+      }
+    },
+    "camera_rear_8MP": {
+      "eval": "file:/sys/class/video4linux/video1/name",
+      "expect": {
+        "file_raw": "!re 8MP"
+      }
+    },
+    "camera_rear_5M": {
+      "eval": "file:/sys/class/video4linux/video1/name",
+      "expect": {
+        "file_raw": "!re 5M"
+      }
+    }
+  },
+  "stylus": {
+    "generic": {
+      "eval": {
+        "input_device": {
+          "device_type": "stylus"
+        }
+      }
+    }
+  }
+}

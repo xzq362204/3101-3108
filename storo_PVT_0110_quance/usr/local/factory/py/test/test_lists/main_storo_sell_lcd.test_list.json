@@ -1,0 +1,1544 @@
+{
+  "inherit": [
+    "common.test_list",
+    "generic_main.test_list"
+  ],
+  "label": "Storo360 Sell LCD Test-List",
+  "tests": [
+    "FATP"
+  ],
+  "constants": {
+    "default_factory_server_url": "http://172.30.66.5:8080/",
+    "default_timeout_secs": 200,
+    "run_in": {
+      "sat_duration_secs": 3600,
+      "dozing_sat_duration_secs": 600
+    },
+    "grt": {
+      "enable_zero_touch": true
+    },
+    "overlord": {
+      "overlord_urls": [],
+      "tls_no_verify": true
+    },
+    "wireless_services": [
+      [
+        "antenna_test_5G_1",
+        5745,
+        null
+      ],
+      [
+        "antenna_test_1",
+        2412,
+        null
+      ]
+    ],
+    "phase": "PVT",
+    "smt": {
+      "component_list": [
+        "audio_codec",
+        "cpu",
+        "dram",
+        "embedded_controller",
+        "flash_chip",
+        "storage",
+        "wireless",
+        "bluetooth",
+        "camera_front",
+        "usb_hosts"
+      ]
+    },
+    "sd": {
+      "sysfs_path": "/sys/devices/pci0000:00/0000:00:14.5/mmc_host"
+    }
+  },
+  "options": {
+    "engineering_password_sha1": null,
+    "skipped_tests": {
+      "device.factory.end_SMT": [ "SMT" ],
+      "device.factory.end_FAT": [],
+      "device.factory.end_RUNIN": [],
+      "device.factory.end_FFT": [],
+      "EVT": [
+        "GRT.EnableECWriteProtect.ExecShell",
+        "GRT.EnableECWriteProtect.RebootStep",
+        "GRT.GRTStart.CollectDeviceInfo",
+        "GRT.EnableECWriteProtect",
+        "GRT.ReSignReleaseKernel"
+      ],
+      "DVT": [
+        "GRT.EnableECWriteProtect.ExecShell",
+        "GRT.EnableECWriteProtect.RebootStep",
+        "GRT.EnableECWriteProtect",
+        "GRT.ReSignReleaseKernel"
+      ]
+    },
+    "waived_tests": {
+      "PVT": [
+        "FAT.ChangeIPPort3101Group.ChangeIPPort3101",
+        "FAT.ChangeIPPort3108Group.ChangeIPPort3108"
+      ]
+    }
+  },
+  "definitions": {
+    "SMT": {
+      "locals": {
+        "factory_server_url": "http://172.25.77.22:10530"
+      },
+      "subtests": [
+        "UpdateCr50Firmware",
+        "SMTStart",
+        "WriteDRAMPartNum",
+        "SMTCheckCBIData",
+        "SMTItems",
+        "CheckPoint",
+        "SMTEnd"
+      ]
+    },
+    "SMTEnd": {
+      "inherit": "TestGroup",
+      "label": "Finish",
+      "subtests": [
+        "StationEnd",
+        "HaltStep"
+      ]
+    },
+    "WriteDRAMPartNum": {
+      "pytest_name": "exec_shell",
+      "label": "Write DRAM part number to EEPROM",
+      "args": {
+        "commands": [
+          "[ -n \"$(factory device-data -g component.dram.part_num)\" ]",
+          "ectool cbi set 3 \"$(factory device-data -g component.dram.part_num)\" 0"
+        ]
+      }
+    },
+    "WriteSKUID": {
+      "pytest_name": "exec_shell",
+      "label": "Write SKUID to EEPROM",
+      "args": {
+        "commands": [
+          "[ -n \"$(factory device-data -g component.skuid)\" ]",
+          "ectool cbi set 2 $(factory device-data -g component.skuid) 4 0"
+        ]
+      }
+    },
+    "WriteFWConfig": {
+      "pytest_name": "exec_shell",
+      "label": "Write FW Config to EEPROM",
+      "args": {
+        "commands": [
+          "[ -n \"$(factory device-data -g component.fwconfig)\" ]",
+          "[ -n \"$(factory device-data -g component.fwsetting)\" ]",
+          "ectool cbi set 6 $(factory device-data -g component.fwconfig) $(factory device-data -g component.fwsetting)"
+        ]
+      }
+    },
+    "WriteSSFC": {
+      "pytest_name": "exec_shell",
+      "label": "Write SSFC to EEPROM",
+      "args": {
+        "commands": [
+          "[ -n \"$(factory device-data -g component.ssfc)\" ]",
+          "ectool cbi set 8 $(factory device-data -g component.ssfc) 4 0"
+        ]
+      }
+    },
+    "UpdateCr50Firmware": {
+      "inherit": "TestGroup",
+      "label": "Update Cr50 Firmware",
+      "subtests": [
+        {
+          "pytest_name": "update_cr50_firmware",
+          "args": {
+            "firmware_file": "eval! constants.use_prepvt_cr50_firmware and '/opt/google/cr50/firmware/cr50.bin.prepvt' or None",
+            "skip_prepvt_flag_check": "eval! constants.phase != 'PVT'",
+            "set_recovery_request_train_and_reboot": true
+          }
+        },
+        "ColdReset",
+        {
+          "pytest_name": "update_cr50_firmware",
+          "label": "Check Cr50 Firmware Version",
+          "args": {
+            "method": "CHECK_VERSION"
+          }
+        }
+      ]
+    },
+    "ColdReset": {
+      "inherit": "TestGroup",
+      "label": "Cold Reset",
+      "subtests": [
+        {
+          "inherit": "ExecShell",
+          "label": "EC Cold Reset",
+          "args": {
+            "commands": [
+              "sync; sync; sync; sleep 5; ectool reboot_ec cold at-shutdown"
+            ]
+          }
+        },
+        "FullRebootStep"
+      ]
+    },
+    "FATP": {
+      "locals": {
+        "factory_server_url": "http://172.25.51.19:15500"
+      },
+      "subtests": [
+        "FFT"
+      ]
+    },
+    "ChangeIPPort3108": {
+      "pytest_name": "sync_factory_server",
+      "label": "change IP PORT3108",
+      "run_if": "device.component.has_rear_camera",
+      "args": {
+        "server_url": "http://192.168.1.131:16500",
+        "loop_count_ping": 5
+      }
+    },
+    "ChangeIPPort3101": {
+      "pytest_name": "sync_factory_server",
+      "label": "change IP PORT3101",
+      "run_if": "not device.component.has_rear_camera",
+      "args": {
+        "server_url": "http://192.168.1.131:15500",
+        "loop_count_ping": 5
+      }
+    },
+    "ChangeIPPort3108ReTry": {
+      "inherit": "ChangeIPPort3108",
+      "run_if": "device.component.has_rear_camera and device.factory.ping_fail",
+      "args": {
+        "loop_count_ping": 0
+      }
+    },
+    "ChangeIPPort3101ReTry": {
+      "inherit": "ChangeIPPort3101",
+      "run_if": "not device.component.has_rear_camera and device.factory.ping_fail",
+      "args": {
+        "loop_count_ping": 0
+      }
+    },
+    "ChangeIPPort3101Group": {
+      "inherit": "TestGroup",
+      "label": "change IP PORT3101 Group",
+      "run_if": "not device.component.has_rear_camera",
+      "subtests": [
+        "ChangeIPPort3101",
+        "ColdReset",
+        "ChangeIPPort3101ReTry"
+      ]
+    },
+    "ChangeIPPort3108Group": {
+      "inherit": "TestGroup",
+      "label": "change IP PORT3108 Group",
+      "run_if": "device.component.has_rear_camera",
+      "subtests": [
+        "ChangeIPPort3108",
+        "ColdReset",
+        "ChangeIPPort3108ReTry"
+      ]
+    },
+    "ST4Test": {
+      "inherit": "ExecShell",
+      "label": "TouchScreen ST4 Test",
+      "run_if": "device.component.has_touchscreen",
+      "args": {
+        "working_dir": "/usr/local/factory/ST_Test/",
+        "commands": "./MT_Test_Auto_ST4.sh"
+      }
+    },
+    "ST5Test": {
+      "inherit": "ExecShell",
+      "label": "TouchScreen ST5 Test",
+      "args": {
+        "working_dir": "/usr/local/factory/ST_Test/",
+        "commands": "./MT_Test_Auto_ST5.sh"
+      }
+    },
+    "UpdateTouchPanelFW": {
+      "inherit": "ExecShell",
+      "label": "Update Touch Panel",
+      "run_if": "device.component.has_touchscreen",
+      "args": {
+        "working_dir": "/usr/local/factory/ST_Test/",
+        "commands": "./touchfw_parse_update.sh"
+      }
+    },
+    "StationStart": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "SyncFactoryServer",
+        "Barrier",
+        "ShopfloorNotifyStart",
+        "GetDeviceInfo",
+        "WriteDeviceDataToVPD"
+      ]
+    },
+    "FATPStationStart": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "ChangeIPPort3108Group",
+        "ChangeIPPort3101Group",
+        "Barrier",
+        "ShopfloorNotifyStart",
+        "WriteDeviceDataToVPD"
+      ]
+    },
+    "FAT": {
+      "label": "FAT(Final Assembly Test)",
+      "locals": {
+        "station_end_upload_report": true
+      },
+      "subtests": [
+        "FATStart",
+        "FATItems"
+      ]
+    },
+    "FATStart": {
+      "inherit": "FactoryTest",
+      "subtests": [
+        "ReadDeviceDataFromVPD",
+        "StationStart"
+      ]
+    },
+    "SMTCheckCBIData": {
+      "pytest_name": "info_check",
+      "label": "Confirm CBI Data",
+      "args": {
+        "autostart": true,
+        "skuid_check": false,
+        "dram_partnumber_check": true,
+        "fw_config_check": false,
+        "ssfc_check": false
+      }
+    },
+    "FACheckCBIData": {
+      "pytest_name": "info_check",
+      "label": "Confirm CBI Data",
+      "args": {
+        "autostart": true,
+        "skuid_check": true,
+        "dram_partnumber_check": true,
+        "fw_config_check": true,
+        "ssfc_check": true
+      }
+    },
+    "PowerButton": {
+      "inherit": "Button",
+      "run_if": "not device.component.has_rear_camera",
+      "label": "Power Button",
+      "args": {
+        "device_filter": "Power Button",
+        "button_key_name": "ectool:-H1_EC_PWR_BTN_ODL",
+        "button_name": "i18n! Power Button"
+      }
+    },
+    "Wwantest": {
+      "pytest_name": "wwan_rssi_test",
+      "run_if": "device.component.has_lte",
+      "label": "Wwan Test",
+      "args": {
+        "timeout": 200,
+        "autostart": true,
+        "loop_time": 1
+      }
+    },
+    "WirelessConnect": {
+      "pytest_name": "wireless_connect",
+      "run_if": "device.component.has_lte",
+      "args": {
+        "service_name": [
+          {
+            "ssid": "Tenda_269E40"
+          },
+          {
+            "ssid": "Tenda_269E40_5G"
+          }
+        ]
+      }
+    },
+    "WirelessLog": {
+      "pytest_name": "wireless_log",
+      "run_if": "device.component.has_lte",
+      "args": {
+      }
+    },
+    "Ltetest": {
+      "pytest_name": "lte_rssi_test",
+      "run_if": "device.component.has_lte",
+      "label": "Lte Test",
+      "args": {
+        "timeout": 200,
+        "autostart": true,
+        "loop_time": 1
+      }
+    },
+    "WwanDetect": {
+      "pytest_name": "wwan_rssi_test",
+      "label": "Wwan Test",
+      "args": {
+        "timeout": 200,
+        "autostart": true,
+        "only_check_presence": true,
+        "loop_time": 1
+      }
+    },
+    "LteDetect": {
+      "pytest_name": "lte_rssi_test",
+      "run_if": "device.component.has_lte",
+      "label": "LTE Detect Test",
+      "args": {
+        "timeout": 200,
+        "autostart": true,
+        "only_check_presence": true,
+        "loop_time": 1
+      }
+    },
+    "UpdateFirmware": {
+      "label": "Update Firmware",
+      "subtests": [
+        {
+          "pytest_name": "update_firmware",
+          "args": {
+            "download_from_server": true
+          }
+        },
+        "Barrier"
+      ]
+    },
+    "FATItems": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "UpdateFirmware",
+        "ColdReset",
+        "SyncFactoryServer",
+        "Barrier"
+      ]
+    },
+    "FFT": {
+      "subtests": [
+        "SyncFactoryServer",
+        "Barrier",
+        "Backlight",
+        "Display",
+        "DisplayPoint",
+        "ST5Test",
+        "Barrier",
+        "HaltStep"
+      ]
+    },
+    "FFTEnd": {
+      "inherit": "TestGroup",
+      "label": "Finish",
+      "subtests": [
+        "ShopfloorNotifyEnd",
+        "Barrier",
+        "HaltStep"
+      ]
+    },
+    "HWButton": {
+      "inherit": "TestGroup",
+      "label": "Hardware Button",
+      "subtests": [
+        {
+          "inherit": "Button",
+          "run_if": "device.component.has_rear_camera",
+          "label": "Volume Down",
+          "args": {
+            "button_key_name": "ectool:-VOLDN_BTN_ODL",
+            "button_name": "i18n! Volume Down"
+          }
+        },
+        {
+          "inherit": "Button",
+          "run_if": "device.component.has_rear_camera",
+          "label": "Volume Up",
+          "args": {
+            "button_key_name": "ectool:-VOLUP_BTN_ODL",
+            "button_name": "i18n! Volume Up"
+          }
+        },
+        {
+          "inherit": "Button",
+          "label": "Power Button",
+          "args": {
+            "device_filter": "Power Button",
+            "button_key_name": "ectool:-H1_EC_PWR_BTN_ODL",
+            "button_name": "i18n! Power Button"
+          }
+        }
+      ]
+    },
+    "NotifyOverlordTrackConnection": {
+      "pytest_name": "exec_shell",
+      "label": "Notify Overlord to track connection",
+      "args": {
+        "commands": "ghost --track-connection y"
+      }
+    },
+    "NotifyOverlordUntrackConnection": {
+      "pytest_name": "exec_shell",
+      "label": "Notify Overlord not to track connection",
+      "args": {
+        "commands": "ghost --track-connection n"
+      }
+    },
+    "RearCamera": {
+      "inherit": "CameraManual",
+      "run_if": "device.component.has_rear_camera",
+      "args": {
+        "e2e_mode": true,
+        "camera_facing": "rear"
+      }
+    },
+    "Bluetooth": {
+      "args": {
+        "average_rssi_threshold": -70.0
+      }
+    },
+    "StylusGarage": {
+      "pytest_name": "stylus_garage",
+      "run_if": "device.component.has_touchscreen"
+    },
+    "Wireless": {
+      "inherit": "WirelessRadiotap",
+      "args": {
+        "device_name": "wlan0",
+        "ignore_missing_services": true,
+        "services": "eval! constants.wireless_services",
+        "strength": {
+          "main": -65,
+          "aux": -65,
+          "all": -65
+        },
+        "wifi_chip_type": null
+      }
+    },
+    "Stylus": {
+      "pytest_name": "stylus",
+      "label": "Stylus",
+      "run_if": "device.component.has_pen",
+      "args": {
+        "device_filter": null,
+        "endpoints_ratio": [
+          [ 0, 0 ],
+          [ 0, 1 ]
+        ]
+      }
+    },
+    "StylusPen": {
+      "pytest_name": "detect_stylus",
+      "label": "Stylus Pen",
+      "run_if": "device.component.has_pen",
+      "args": {
+        "device_filter": null,
+        "timeout_secs": 30
+      }
+    },
+    "Touchscreen": {
+      "pytest_name": "touchscreen",
+      "run_if": "device.component.has_touchscreen",
+      "args": {
+        "x_segments": 5,
+        "y_segments": 5,
+        "device_filter": null
+      }
+    },
+    "ProbeSimCardTray": {
+      "run_if": "device.component.has_lte",
+      "pytest_name": "probe_sim_card",
+      "args": {
+        "timeout_secs": 120,
+        "insert": true,
+        "remove": true,
+        "only_check_presence": false
+      }
+    },
+    "DisableLidFunction": {
+      "inherit": "ExecShell",
+      "label": "Disable Lid Function",
+      "args": {
+        "commands": "/usr/share/vboot/bin/set_gbb_flags.sh 0x1039"
+      }
+    },
+    "DisableLid": {
+      "inherit": "ExecShell",
+      "label": "Disable Lid",
+      "args": {
+        "commands": "ectool forcelidopen 1"
+      }
+    },
+    "EnableLid": {
+      "inherit": "ExecShell",
+      "label": "Enable Lid",
+      "args": {
+        "commands": "ectool forcelidopen 0"
+      }
+    },
+    "EnableLidFunction": {
+      "inherit": "ExecShell",
+      "label": "Enable Lid Function",
+      "args": {
+        "commands": "/usr/share/vboot/bin/set_gbb_flags.sh 0x39"
+      }
+    },
+    "ScreenRotation": {
+      "label": "Screen Rotation",
+      "run_if": "device.component.has_rear_camera",
+      "subtests": [
+        {
+          "pytest_name": "tablet_mode",
+          "args": {
+            "prompt_flip_tablet": true
+          }
+        },
+        {
+          "pytest_name": "tablet_rotation",
+          "label": "Tablet Rotation Lid-Accel",
+          "args": {
+            "accelerometer_location": "lid",
+            "degrees_to_orientations": {
+              "0": {
+                "in_accel_x": 0,
+                "in_accel_y": 1,
+                "in_accel_z": 0
+              },
+              "90": {
+                "in_accel_x": 1,
+                "in_accel_y": 0,
+                "in_accel_z": 0
+              },
+              "180": {
+                "in_accel_x": 0,
+                "in_accel_y": -1,
+                "in_accel_z": 0
+              },
+              "270": {
+                "in_accel_x": -1,
+                "in_accel_y": 0,
+                "in_accel_z": 0
+              }
+            },
+            "spec_offset": [ 1.5, 1.5 ]
+          }
+        },
+        {
+          "pytest_name": "tablet_mode",
+          "label": "Notebook Mode",
+          "args": {
+            "prompt_flip_notebook": true
+          }
+        }
+      ]
+    },
+    "RebootStep1": {
+      "inherit": "ExecShell",
+      "label": "EC Cold Reset",
+      "args": {
+        "commands": [
+          "sync; sync; sync; sleep 5; ectool reboot_ec cold"
+        ]
+      }
+    },
+    "ColdReboot": {
+      "pytest_name": "exec_shell",
+      "run_if": "device.component.fwupdate",
+      "label": "ColdReboot",
+      "allow_reboot": true,
+      "args": {
+        "commands": [
+          "sync; sync; sync; sleep 5; ectool reboot_ec cold"
+        ]
+      }
+    },
+    "FWupdateColdReboot": {
+      "label": "FWupdate ColdReboot",
+      "allow_reboot": true,
+      "subtests": [
+        {
+          "pytest_name": "get_info"
+        },
+        "ColdReset"
+      ]
+    },
+    "BaseGyroscope": {
+      "label": "Gyroscope",
+      "run_if": "device.component.has_rear_camera",
+      "subtests": [
+        {
+          "pytest_name": "exec_shell",
+          "label": "Enable Gyroscope",
+          "args": {
+            "commands": [
+              "ectool motionsense odr 2 25000"
+            ]
+          }
+        },
+        {
+          "pytest_name": "gyroscope_calibration",
+          "label": "Gyroscope Calibration",
+          "args": {
+            "location": "base"
+          }
+        },
+        "Gyroscope"
+      ]
+    },
+    "FFTItems": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "Probe",
+        "RAMSize",
+        "EMMCSize",
+        "SpeakerDMic",
+        "Bluetooth",
+        "FFTWifiSSIDList",
+        "Wireless",
+        "UpdateTouchPanelFW",
+        "LidSwitch",
+        "ProximitySensor",
+        "SDPerformance",
+        "ProbeSimCardTray",
+        "Barrier",
+        "BaseGyroscope",
+        "BaseAccelerometersGroup",
+        "LidAccelerometersGroup",
+        "ScreenRotation",
+        "HWButton",
+        "FrontCameraQRScan",
+        "RearCameraQRScan",
+        "FrontCameraLED",
+        "Backlight",
+        "LED",
+        "PenRemoveTest",
+        "Stylus",
+        "PenSwitchTest",
+        "Touchscreen",
+        "DisplayPoint",
+        "Display",
+        "FATouchpad",
+        "FAKeyboard",
+        "Battery",
+        "ST5Test",
+        "Barrier",
+        "TopUSBAndTypeCLeftGroup",
+        "TopUSBAndTypeCRightGroup",
+        "Ltetest",
+        "Barrier",
+        "AudioJack",
+        "CameraAutoTestGroup",
+        "VerifySN"
+      ]
+    },
+    "PenSwitchTest": {
+      "inherit": "ExecShell",
+      "run_if": "device.component.has_pen",
+      "label": "Pen exist Test",
+      "args": {
+        "autostart": false,
+        "tipMsg": "Plug in Pen and Press Space to continue",
+        "commands": "sleep 5; /usr/local/factory/py/test/pytests/check_pen_switch.sh"
+      }
+    },
+    "PenRemoveTest": {
+      "inherit": "ExecShell",
+      "run_if": "device.component.has_pen",
+      "label": "Pen not exist Test",
+      "args": {
+        "autostart": false,
+        "tipMsg": "Remove Pen and Press Space to continue",
+        "commands": "/usr/local/factory/py/test/pytests/check_pen_noexist.sh"
+      }
+    },
+    "SensorGroup": {
+      "label": "Sensor Tests",
+      "run_if": "device.component.has_rear_camera",
+      "subtests": [
+        "LidAccelerometersGroup",
+        "ScreenRotation"
+      ]
+    },
+    "SMTWifiSSIDList": {
+      "inherit": "WifiSSIDList",
+      "args": {
+        "event_log_name": "SMT_basic_ssid_list"
+      }
+    },
+    "FFTWifiSSIDList": {
+      "inherit": "WifiSSIDList",
+      "args": {
+        "event_log_name": "FFT_basic_ssid_list"
+      }
+    },
+    "Charging9V": {
+      "inherit": "USBTypeCManualCharge",
+      "label": "9V Charging",
+      "locals": {
+        "usb_label": "Base USB TypeC Port",
+        "usb": "eval! constants.typec_usb",
+        "voltage": 9
+      }
+    },
+    "ReadDeviceDataFromVPD": {
+      "pytest_name": "read_device_data_from_vpd",
+      "args": {
+        "ro_key_map": {
+          "region": "factory.region",
+          "serial_number": "serials.serial_number",
+          "mlb_serial_number": "serials.mlb_serial_number",
+          "attested_device_id": "factory.attested_device_id"
+        },
+        "rw_key_map": {
+          "ubind_attribute": "factory.ubind",
+          "gbind_attribute": "factory.gbind"
+        }
+      }
+    },
+    "CheckReleaseImage": {
+      "pytest_name": "check_image_version",
+      "__comment": "Check release image version",
+      "label": "Check Release Image",
+      "args": {
+        "min_version": "13982.0.0",
+        "check_release_image": true,
+        "reimage": true,
+        "require_space": false,
+        "use_netboot": false
+      }
+    },
+    "LidAccelerometers": {
+      "pytest_name": "accelerometers",
+      "args": {
+        "location": "lid",
+        "limits": {
+          "x": [ -2.0, 2.0 ],
+          "y": [ -2.0, 2.0 ],
+          "z": [ 8.0, 11.0 ]
+        }
+      }
+    },
+    "LidAccelerometersCalibration": {
+      "inherit": "AccelerometersCalibration",
+      "args": {
+        "location": "lid",
+        "orientation": {
+          "in_accel_x": 0,
+          "in_accel_y": 0,
+          "in_accel_z": 1
+        },
+        "spec_offset": [
+          2.0,
+          2.0
+        ]
+      }
+    },
+    "LidAccelerometersGroup": {
+      "label": "Lid Accelerometers Group",
+      "run_if": "device.component.has_rear_camera",
+      "inherit": "FactoryTest",
+      "subtests": [
+        "LidAccelerometersCalibration",
+        "LidAccelerometers"
+      ]
+    },
+    "BaseAccelerometers": {
+      "pytest_name": "accelerometers",
+      "args": {
+        "location": "base",
+        "limits": {
+          "x": [ -2.0, 2.0 ],
+          "y": [ -2.0, 2.0 ],
+          "z": [ 7.8, 11.8 ]
+        }
+      }
+    },
+    "BaseAccelerometersCalibration": {
+      "inherit": "AccelerometersCalibration",
+      "args": {
+        "location": "base",
+        "orientation": {
+          "in_accel_x": 0,
+          "in_accel_y": 0,
+          "in_accel_z": 1
+        },
+        "spec_offset": [
+          2.0,
+          2.0
+        ]
+      }
+    },
+    "BaseAccelerometersGroup": {
+      "label": "Base Accelerometers Group",
+      "run_if": "device.component.has_rear_camera",
+      "inherit": "FactoryTest",
+      "subtests": [
+        "BaseAccelerometersCalibration",
+        "BaseAccelerometers"
+      ]
+    },
+    "AudioJack": {
+      "disable_services": [ "cras" ],
+      "args": {
+        "audio_conf": "audio_sof_storo",
+        "check_dongle": true,
+        "initial_actions": [
+          [
+            "sof-rt5682",
+            "initial"
+          ]
+        ],
+        "input_dev": [
+          "sof-rt5682",
+          "1"
+        ],
+        "output_dev": [
+          "sof-rt5682",
+          "1"
+        ],
+        "output_volume": 10,
+        "require_dongle": true,
+        "tests_to_conduct": [
+          {
+            "freq_threshold": 300,
+            "rms_threshold": [
+              0.08,
+              null
+            ],
+            "type": "sinewav"
+          }
+        ]
+      }
+    },
+    "Probe": {
+      "args": {
+        "config_file": "probe_storo_for_match_sku_components.json",
+        "overridden_rules": [
+          [ "audio_codec", "==", 5 ],
+          [ "usb_host", "==", 2 ]
+        ]
+      }
+    },
+    "SMTTouchpad": {
+      "inherit": "Touchpad",
+      "args": {
+        "number_to_click": 0,
+        "number_to_quadrant": 0
+      }
+    },
+    "FATouchpad": {
+      "inherit": "Touchpad",
+      "args": {
+        "number_to_click": 2,
+        "number_to_quadrant": 1
+      }
+    },
+    "FAKeyboard": {
+      "inherit": "Keyboard",
+      "label": "Keyboard From Region",
+      "args": {
+        "skip_keycodes": [ 116 ]
+      }
+    },
+    "SMTKeyboard": {
+      "run_if": "not device.component.has_rear_camera",
+      "inherit": "Keyboard",
+      "args": {
+        "layout": "ANSI",
+        "skip_keycodes": [ 116, 142 ]
+      }
+    },
+    "SMTKeyboard3101": {
+      "run_if": "not device.component.has_rear_camera",
+      "inherit": "Keyboard",
+      "label": "Keyboard 3101",
+      "args": {
+        "layout": "ANSI3101"
+      }
+    },
+    "SMTKeyboard3108": {
+      "run_if": "device.component.has_rear_camera",
+      "inherit": "Keyboard",
+      "label": "Keyboard 3108",
+      "args": {
+        "layout": "ANSI3108"
+      }
+    },
+    "SMTProbe": {
+      "pytest_name": "probe.probe",
+      "label": "Probe Hardware",
+      "args": {
+        "component_list": "eval! constants.smt.component_list",
+        "config_file": "probe_storo_for_match_sku_components.json",
+        "overridden_rules": [
+          [ "audio_codec", "==", 5 ],
+          [ "usb_host", "==", 2 ]
+        ]
+      }
+    },
+    "LidSwitch": {
+      "args": {
+        "timeout_secs": 9999,
+        "device_filter": 0
+      }
+    },
+    "LED": {
+      "args": {
+        "colors": [
+          [ "BATTERY", "AMBER" ],
+          [ "BATTERY", "WHITE" ],
+          [ "BATTERY", "OFF" ]
+        ],
+        "target_leds": [ "BATTERY" ],
+        "challenge": true
+      }
+    },
+    "ProximitySensor": {
+      "pytest_name": "proximity_sensor",
+      "run_if": "device.component.has_lte",
+      "disable_services": [
+        "powerd"
+      ],
+      "args": {
+        "timeout": 2000,
+        "device_name": "sx932x",
+        "sensor_initial_max": 100,
+        "sensor_value_path": "in_proximity9_DC1_raw",
+        "calibrate_path": "events/in_proximity9_DC1_thresh_either_en"
+      }
+    },
+    "VerifySN": {
+      "inherit": "Scan",
+      "label": "Scan serial number",
+      "args": {
+        "check_device_data_key": "serials.serial_number",
+        "event_log_key": "serial_number",
+        "ignore_case": true,
+        "label": "i18n! Serial Number"
+      }
+    },
+    "USBTypeAManualTest": {
+      "inherit": "TestGroup",
+      "label": "Manual Test USB TypeA",
+      "locals": {
+        "usb": "eval! constants.typea_usb.left",
+        "usb_label": "i18n! Left USB TypeA"
+      },
+      "subtests": [
+        "USB3Performance",
+        "USB2Performance"
+      ]
+    },
+    "ExternalDisplay": {
+      "pytest_name": "external_display",
+      "args": {
+        "main_display": "eDP-1",
+        "display_info": [
+          {
+            "display_label": "External Display",
+            "display_id": "HDMI",
+            "usbpd_spec": {
+              "port": 0
+            }
+          }
+        ]
+      }
+    },
+    "USBTypeCManualChargeItems": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        {
+          "inherit": "USBTypeCManualCharge",
+          "label": "15V Charging",
+          "locals": {
+            "voltage": 15
+          }
+        }
+      ]
+    },
+    "USBTypeCManualTest": {
+      "inherit": "TestGroup",
+      "label": "Manual Test USB TypeC",
+      "locals": {
+        "usb": "eval! constants.typec_usb.left",
+        "usb_label": "i18n! Left USB TypeC"
+      },
+      "subtests": [
+        {
+          "inherit": "USBPerformance",
+          "label": "USB3 CC1 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb3_sysfs_path",
+            "usbpd_port_polarity": [
+              "eval! locals.usb.usbpd_id",
+              1
+            ]
+          }
+        },
+        {
+          "inherit": "USBPerformance",
+          "label": "USB3 CC2 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb3_sysfs_path",
+            "usbpd_port_polarity": [
+              "eval! locals.usb.usbpd_id",
+              2
+            ]
+          }
+        },
+        {
+          "inherit": "USBPerformance",
+          "label": "USB2 Performance",
+          "args": {
+            "sysfs_path": "eval! locals.usb.usb2_sysfs_path"
+          }
+        },
+        "USBTypeCManualChargeItems",
+        {
+          "inherit": "ExternalDisplay",
+          "label": "USB3 External Display Test",
+          "args": {
+            "drm_sysfs_path": "eval! locals.usb.drm_sysfs_path",
+            "display_info": [
+              "eval! locals.usb.display_info"
+            ]
+          }
+        },
+        "Barrier"
+      ]
+    },
+    "SpeakerDMic": {
+      "pytest_name": "audio_loop",
+      "disable_services": [ "cras" ],
+      "args": {
+        "audio_conf": "audio_sof_storo",
+        "autostart": true,
+        "check_dongle": true,
+        "require_dongle": false,
+        "initial_actions": [
+          [
+            "sof-rt5682",
+            "initial"
+          ]
+        ],
+        "input_dev": [
+          "sof-rt5682",
+          "5"
+        ],
+        "mic_source": "Dmic",
+        "output_dev": [
+          "sof-rt5682",
+          "0"
+        ],
+        "output_volume": 20
+      }
+    },
+    "MemoryTraining": {
+      "pytest_name": "mrc_cache",
+      "label": "Memory Training",
+      "__comment": "DRAM Full calibration on Kukui needs to be enabled first",
+      "args": {
+        "mode": "create"
+      }
+    },
+    "ObeOrPack": {
+     "pytest_name": "exec_shell",
+     "label": "obe or pack",
+     "args": {
+       "commands": "python /usr/local/factory/sh/cutoff/show_qrcode.py"
+      }
+    },
+    "RunInWebGLAquarium": {
+      "inherit": "WebGLAquarium",
+      "args": {
+        "duration_secs": "eval! constants.run_in.sat_duration_secs",
+        "max_cpu_temp": 90
+      }
+    },
+    "RunInStressGroupWithRearCameraMain": {
+      "label": "Stress Group With Rear Camera",
+      "parallel": true,
+      "subtests": [
+        "RunInWebGLAquarium",
+        "RunInStressRearCamera",
+        "RunInURandom",
+        "RunInStressAppTest",
+        "RunInStressCountdown"
+      ]
+    },
+    "RunInItems": {
+      "subtests": [
+        "DisableLidFunction",
+        "DisableLid",
+        "ChargerTypeDetection",
+        "ChargeDischargeCurrent",
+        "Probe",
+        "RebootStep",
+        "Barrier",
+        "MemoryTraining",
+        "RebootStep",
+        "PartitionTable",
+        "VerifyRootPartition",
+        "BadBlocks",
+        "BatterySysfs",
+        "Battery",
+        "SMTThermalLoad",
+        "RunInDropTemp",
+        "RunInStressGroupWithFrontCamera",
+        "RunInDropTemp",
+        "RunInStressGroupWithRearCameraMain",
+        "RunInDropTemp",
+        "RunInDozingStress",
+        "Barrier",
+        "RunInRebootSequence",
+        "Barrier",
+        "TPMGroup",
+        "Barrier",
+        "BlockingCharge",
+        "RebootStep"
+      ]
+    },
+    "GRT": {
+      "subtests": [
+        "CollectDeviceInfo",
+        "ReadDeviceDataFromVPD",
+        "GRTStart",
+        "ReleaseImageGroup",
+        "CollectDeviceInfo",
+        "GRTItems",
+        "CheckPoint",
+        "GRTEnd",
+        "AllCheckPoint",
+        "EnableLidFunction",
+        "EnableLid",
+        "IdleWait",
+        "LteSarPower",
+        "WriteHWID",
+        "ObeOrPack",
+        "Barrier",
+        "GRTFinalize"
+      ]
+    },
+    "IdleWait": {
+      "inherit": "Idle",
+      "args": {
+        "wait_secs": 60
+      }
+    },
+    "LteSarPower": {
+      "pytest_name": "lte_burn_test",
+      "run_if": "device.component.has_lte",
+      "label": "LTE SAR Power",
+      "args": {
+        "timeout": 10,
+        "autostart": true,
+        "loop_time": 1
+      }
+    },
+    "ReleaseImageGroup": {
+      "label": "Check ReleaseImage Group",
+      "subtests": [
+        {
+          "inherit": "CheckReleaseImage",
+          "args": {
+            "min_version": "13982.69.7",
+            "check_release_image": true,
+            "reimage": true,
+            "require_space": false,
+            "use_netboot": false
+          }
+        },
+        "RebootStep",
+        "PartitionTable",
+        "VerifyRootPartition"
+      ]
+    },
+    "CollectDeviceInfo": {
+      "label": "Collect Device Info",
+      "pytest_name": "collect_device_info",
+      "args": {
+        "filter_colon": true,
+        "manufacturer_id": 29
+      }
+    },
+    "GRTItems": {
+      "inherit": "FlattenGroup",
+      "subtests": [
+        "UploadRegCodes",
+        "ClearTPMOwnerRequest",
+        "RebootStep"
+      ]
+    },
+    "TPMGroup": {
+      "label": "TPM Group",
+      "subtests": [
+        "TPMVerifyEK",
+        "ClearTPMOwnerRequest",
+        "RebootStep"
+      ]
+    },
+    "RunInDropTemp": {
+      "inherit": "TestGroup",
+      "label": "RunIn Drop Temp",
+      "subtests": [
+        "RebootStep",
+        {
+          "inherit": "Idle",
+          "args": {
+            "wait_secs": 120
+          }
+        },
+        "Barrier"
+      ]
+    },
+    "ChargeDischargeCurrent": {
+      "args": {
+        "max_battery_level": null
+      }
+    },
+    "TopUSBAndTypeCLeftGroup": {
+      "label": "Left USB And TypeC",
+      "parallel": true,
+      "subtests": [
+        "TopUSBLeft",
+        "TopTypeCLeft"
+      ]
+    },
+    "TopUSBAndTypeCRightGroup": {
+      "label": "Right USB And TypeC",
+      "parallel": true,
+      "subtests": [
+        "TopUSBRight",
+        "TopTypeCRight"
+      ]
+    },
+    "TopUSBLeft": {
+      "pytest_name": "topusb",
+      "label": "Manual Test Left USB",
+      "args": {
+        "position": "Left",
+        "portindex": 1
+      }
+    },
+    "TopUSBRight": {
+      "pytest_name": "topusb",
+      "label": "Manual Test Right USB",
+      "args": {
+        "position": "Right",
+        "portindex": 1
+      }
+    },
+    "TopTypeCLeft": {
+      "pytest_name": "toptypec",
+      "label": "Manual Test Left TypeC",
+      "args": {
+         "position": "Left",
+         "portindex":1
+       }
+    },
+     "TopTypeCRight": {
+      "pytest_name": "toptypec",
+      "label": "Manual Test Right TypeC",
+      "args": {
+         "position": "Right",
+         "portindex":1
+      }
+    },
+    "SMTItems": {
+      "subtests": [
+        "SMTComponents",
+        "RAMSize",
+        "EMMCSize",
+        "SSFCWriteAndCheckGroup",
+        "LED",
+        "FrontCameraQRScan",
+        "RearCameraQRScan",
+        "TopUSBLeft",
+        "TopUSBRight",
+        "TopTypeCLeft",
+        "TopTypeCRight",
+        "SDPerformance",
+        "Bluetooth",
+        "SMTWifiSSIDList",
+        "SpeakerDMic",
+        "HWButton",
+        "LidSwitch",
+        "SMTKeyboard3101",
+        "SMTKeyboard3108",
+        "SMTTouchpad",
+        "AudioJack",
+        "LteDetect",
+        "ProbeSimCardTray",
+        "Battery",
+        "SMTThermalLoad",
+        "ThermalSensors"
+      ]
+    },
+    "Camera": {
+      "args": {
+        "e2e_mode": false,
+        "resize_ratio": 0.7,
+        "timeout_secs": 30,
+        "camera_args": {
+          "resolution": [
+            1280,
+            720
+          ]
+        }
+      }
+    },
+    "FrontCamera": {
+      "inherit": "CameraManual",
+      "label": "Front Camera",
+      "args": {
+        "fullscreen": true,
+        "mode": "manual",
+        "num_frames_to_pass": 1,
+        "camera_facing": "front"
+      }
+    },
+    "FrontCameraLED": {
+      "inherit": "FrontCamera",
+      "label": "Front Camera LED",
+      "args": {
+        "mode": "manual_led"
+      }
+    },
+    "FrontCameraQRScan": {
+      "inherit": "FrontCamera",
+      "label": "Front Camera QR Scan",
+      "args": {
+        "mode": "qr",
+        "num_frames_to_pass": 3,
+        "QR_string": "Hello ChromeOS!",
+        "timeout_secs": 2000
+      }
+    },
+    "RearCameraQRScan": {
+      "inherit": "RearCamera",
+      "label": "Rear Camera QR Scan",
+      "args": {
+        "mode": "qr",
+        "num_frames_to_pass": 3,
+        "QR_string": "Hello ChromeOS!",
+        "e2e_mode": true,
+        "timeout_secs": 2000
+      }
+    },
+    "RunInStressGroup": {
+      "subtests": [
+        {
+          "inherit": "WebGLAquarium",
+          "args": {
+            "duration_secs": "eval! constants.run_in.sat_duration_secs"
+          }
+        },
+        {
+          "inherit": "FrontCamera",
+          "args": {
+            "mode": "timeout",
+            "timeout_secs": "eval! constants.run_in.sat_duration_secs",
+            "show_image": false
+          }
+        },
+        {
+          "inherit": "URandom",
+          "args": {
+            "duration_secs": "eval! constants.run_in.sat_duration_secs"
+          }
+        },
+        {
+          "inherit": "StressAppTest",
+          "args": {
+            "seconds": "eval! constants.run_in.sat_duration_secs",
+            "free_memory_only": true
+          }
+        },
+        {
+          "inherit": "RunInCountdown",
+          "args": {
+            "duration_secs": "eval! constants.run_in.sat_duration_secs"
+          }
+        }
+      ]
+    },
+    "SMTComponents": {
+      "subtests": [
+        "SMTProbe",
+        "BatterySysfs",
+        "SMTStressAppTest",
+        "SMTStressCountdown",
+        "ChargerTypeDetection",
+        "PartitionTable",
+        "VerifyRootPartition"
+      ]
+    },
+    "EMMCSize": {
+      "label": "EMMC Size Check",
+      "pytest_name": "emmc_size",
+      "run_if": "device.factory.emmc_size and device.factory.emmc_size!=''",
+      "args": {
+        "device_data_key": "factory.emmc_size",
+        "max_diff_gb": 5.0
+      }
+    },
+    "RAMSize": {
+      "label": "RAM Size Check",
+      "pytest_name": "memory_size",
+      "run_if": "device.factory.all_ram_size and device.factory.all_ram_size !=''",
+      "args": {
+        "device_data_key": "factory.all_ram_size",
+        "max_diff_gb": 0.5
+      }
+    },
+    "SSFCWriteAndCheck": {
+      "label": "SSFC Check Write",
+      "pytest_name": "ssfc_write",
+      "args": {
+        "autostart": true,
+        "ssfc_check": true,
+        "timeout": 60
+      }
+    },
+    "SSFCWriteAndCheckGroup": {
+      "inherit": "TestGroup",
+      "label": "SSFC Check Write",
+      "subtests": [
+        "SSFCWriteAndCheck",
+        "ColdReset"
+      ]
+    },
+    "WaitResult": {
+      "pytest_name": "wait_external_test",
+      "label": "Wait CameraAutoTest Result",
+      "args": {
+        "msg": "i18n! waitting Camera Auto Test pass",
+        "run_factory_external_name": "CAT"
+      }
+    },
+    "ReadResult": {
+      "pytest_name": "read_result",
+      "args": {
+        "autostart": true
+      }
+    },
+    "CameraAutoTest": {
+      "label": "Camera Auto Test",
+      "pytest_name": "exec_shell",
+      "args": {
+        "working_dir": "/usr/local/factory/wifi",
+        "commands": "./WIFI.sh"
+      }
+    },
+    "CameraAutoTestGroup": {
+      "inherit": "FactoryTest",
+      "subtests": [
+        "CameraAutoTest",
+        "ReadResult"
+      ]
+    }
+  }
+}

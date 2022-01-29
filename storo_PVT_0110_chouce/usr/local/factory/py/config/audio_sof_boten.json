@@ -1,0 +1,63 @@
+{
+  "sof-rt5682": {
+    "initial": {
+                        "Headphone Jack Switch": "off",
+                        "HPOL Playback Switch": "off",
+                        "HPOR Playback Switch": "off",
+                        "DAC1 Playback Volume": "65",
+                        "Stereo1 DAC MIXL DAC L1 Switch": "0",
+                        "Stereo1 DAC MIXR DAC R1 Switch": "0",
+                        "Stereo1 ADC L Mux": "0",
+                        "STO1 ADC Capture Switch": "on",
+                        "RECMIX1L CBJ Switch": "1",
+                        "IF1 01 ADC Swap Mux": "2",
+                        "CBJ Boost Volume": "3",
+                        "Stereo1 ADC L1 Mux": "1",
+                        "Stereo1 ADC R1 Mux": "1",
+                        "Stereo1 ADC MIXL ADC2 Switch": "0",
+                        "Stereo1 ADC MIXR ADC2 Switch": "0",
+                        "Stereo1 ADC MIXL ADC1 Switch": "1",
+                        "Stereo1 ADC MIXR ADC1 Switch": "1",
+                        "Left Bypass Boost": "1",
+                        "Right Bypass Boost": "1",
+                        "Left Mono LR Select": "Left",
+                        "Right Mono LR Select": "Right"
+    },
+    "enable_dmic": {
+    },
+    "disable_dmic": {
+    },
+    "enable_headphone": {
+      "Headphone Jack Switch": "on",
+      "HPOL Playback Switch": "1",
+      "HPOR Playback Switch": "1",
+      "Stereo1 DAC MIXL DAC L1 Switch": "1",
+      "Stereo1 DAC MIXR DAC R1 Switch": "1"
+    },
+    "disable_headphone": {
+      "Headphone Jack Switch": "off",
+      "HPOL Playback Switch": "0",
+      "HPOR Playback Switch": "0"
+    },
+    "enable_extmic": {
+      "Headset Mic Switch": "on"
+    },
+    "disable_extmic": {
+      "Headset Mic Switch": "off"
+    },
+    "enable_speaker": {
+      "Left Spk Switch": "on",
+      "Right Spk Switch": "on",
+      "Left Mono LR Select": "0",
+      "Right Mono LR Select": "1",
+      "Left Bypass Boost": "1",
+      "Right Bypass Boost": "1",
+      "Left Spk Switch": "1",
+      "Right Spk Switch": "1"
+    },
+    "disable_speaker": {
+      "Left Spk Switch": "off",
+      "Right Spk Switch": "off"
+    }
+  }
+}

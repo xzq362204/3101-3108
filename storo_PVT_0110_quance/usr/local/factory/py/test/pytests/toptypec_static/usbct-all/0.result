@@ -1,0 +1,33 @@
+{
+  "id": 0,
+  "result": "PASS",
+  "profile": "usb",
+  "USB3A": {
+    "result": "PASS",
+    "speed": {
+      "unit": "MB/s",
+      "readSpeed": 204,
+      "writeSpeed": 169
+    }
+  },
+  "USB2A": {
+    "result": "PASS"
+  },
+  "USB3B": {
+    "result": "PASS",
+    "speed": {
+      "unit": "MB/s",
+      "readSpeed": 238,
+      "writeSpeed": 172
+    }
+  },
+  "USB2B": {
+    "result": "PASS"
+  },
+  "loadVoltage": {
+    "side": "B",
+    "plane": 2,
+    "result": "5.152(4.45~5.55)"
+  },
+  "duration": 9.445
+}

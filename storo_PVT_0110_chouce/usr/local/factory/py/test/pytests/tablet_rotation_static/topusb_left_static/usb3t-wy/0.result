@@ -1,0 +1,33 @@
+{
+  "id": 0,
+  "result": "PASS",
+  "profile": "standard",
+  "VBus": {
+    "side": "A",
+    "plane": 1,
+    "result": "5.085(4.45~5.45)"
+  },
+  "USB3A": {
+    "result": "PASS",
+    "speed": {
+      "unit": "MB/s",
+      "readSpeed": 196,
+      "writeSpeed": 151
+    }
+  },
+  "USB2A": {
+    "result": "PASS",
+    "speed": {
+      "unit": "MB/s",
+      "readSpeed": 39,
+      "writeSpeed": 29
+    }
+  },
+  "shortTest": "PASS",
+  "loadVoltage": {
+    "side": "A",
+    "plane": 1,
+    "result": "5.124(4.45~5.45)"
+  },
+  "duration": 5.433
+}

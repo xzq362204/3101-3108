@@ -1,0 +1,51 @@
+{
+  "inherit": [
+    "disable_factory_server.test_list",
+    "generic_grt.test_list"
+  ],
+  "label": "Generic RMA",
+  "constants": {
+    "phase": "PVT",
+    "rma_factory_server": "none",
+    "rma_mode": true
+  },
+  "definitions": {
+    "RMAFFT": {
+      "inherit": "TestGroup",
+      "label": "FFT",
+      "subtests": [
+        "Placeholder"
+      ]
+    },
+    "RMAGRT": {
+      "inherit": "TestGroup",
+      "label": "GRT (Google Required Tests)",
+      "subtests": [
+        "WriteHWID",
+        "RMAGRTEnd",
+        "AllCheckPoint",
+        "RMAGRTFinalize"
+      ]
+    },
+    "RMAGRTEnd": {
+      "inherit": "TestGroup",
+      "label": "Finish",
+      "subtests": [
+        "TPMVerifyEK",
+        "ClearTPMOwnerRequest",
+        "Barrier",
+        "RebootStep"
+      ]
+    },
+    "RMAGRTFinalize": {
+      "inherit": "GRTFinalize",
+      "args": {
+        "upload_method": "eval! constants.rma_factory_server"
+      }
+    }
+  },
+  "tests": [
+    "RMAFFT",
+    "RMAGRT"
+  ]
+}
